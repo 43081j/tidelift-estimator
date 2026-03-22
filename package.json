@@ -1,0 +1,42 @@
+{
+  "name": "@43081j/tidelift-estimator",
+  "version": "0.1.0",
+  "description": "Estimate the income of a given author.",
+  "files": [
+    "lib/**/*",
+    "!lib/**/*.test.{d.ts,js}"
+  ],
+  "keywords": [
+    "tidelift",
+    "sponsors"
+  ],
+  "homepage": "https://github.com/43081j/tidelift-estimator#readme",
+  "bugs": {
+    "url": "https://github.com/43081j/tidelift-estimator/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/43081j/tidelift-estimator.git"
+  },
+  "license": "MIT",
+  "author": "James Garbutt (https://github.com/43081j)",
+  "type": "module",
+  "main": "lib/main.js",
+  "scripts": {
+    "build": "tsgo",
+    "lint:format": "prettier --check src",
+    "lint:js": "eslint src",
+    "lint": "npm run lint:format && npm run lint:js",
+    "format": "prettier --write src",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260322.1",
+    "@vitest/coverage-v8": "^4.1.0",
+    "eslint": "^10.1.0",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.57.1",
+    "vitest": "^4.1.0"
+  }
+}
