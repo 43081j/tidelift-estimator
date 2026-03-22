@@ -21,6 +21,7 @@
   "license": "MIT",
   "author": "James Garbutt (https://github.com/43081j)",
   "type": "module",
+  "bin": "lib/cli.js",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsgo",
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^25.5.0",
     "@typescript/native-preview": "^7.0.0-dev.20260322.1",
     "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^10.1.0",
