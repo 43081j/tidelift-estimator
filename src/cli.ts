@@ -34,3 +34,16 @@ console.log(
 console.log(
   `  Monthly income:  ${styleText('green', styleText('bold', `$${result.monthlyDollars}`))}`
 );
+console.log();
+console.log(
+  styleText(
+    'dim',
+    'Note: This estimate assumes each lifted package earns $50/month,'
+  )
+);
+console.log(
+  styleText(
+    'dim',
+    'and that the user is the primary maintainer, i.e. the beneficiary.'
+  )
+);
