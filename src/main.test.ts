@@ -12,10 +12,17 @@ function errorResponse(status: number, statusText: string): Response {
   return new Response(null, {status, statusText});
 }
 
-function npmSearchResult(names: string[], total?: number) {
+function npmSearchResult(
+  packages: Array<string | {name: string; weekly: number}>,
+  total?: number
+) {
   return {
-    total: total ?? names.length,
-    objects: names.map((name) => ({package: {name}}))
+    total: total ?? packages.length,
+    objects: packages.map((pkg) => {
+      const name = typeof pkg === 'string' ? pkg : pkg.name;
+      const weekly = typeof pkg === 'string' ? 0 : pkg.weekly;
+      return {package: {name}, downloads: {monthly: weekly * 4, weekly}};
+    })
   };
 }
 
@@ -33,7 +40,13 @@ describe('estimate', () => {
       const url = String(input);
 
       if (url.includes('registry.npmjs.org')) {
-        return jsonResponse(npmSearchResult(['pkg-a', 'pkg-b', 'pkg-c']));
+        return jsonResponse(
+          npmSearchResult([
+            {name: 'pkg-a', weekly: 300_000},
+            {name: 'pkg-b', weekly: 0},
+            {name: 'pkg-c', weekly: 100_000}
+          ])
+        );
       }
 
       return jsonResponse(
@@ -51,7 +64,7 @@ describe('estimate', () => {
       username: 'testuser',
       packageCount: 3,
       liftedPackageCount: 2,
-      monthlyDollars: 100
+      monthlyDollars: 75 // pkg-a: $50 (>=200k weekly), pkg-c: $25 (<200k weekly)
     });
   });
 
@@ -60,7 +73,9 @@ describe('estimate', () => {
       const url = String(input);
 
       if (url.includes('registry.npmjs.org')) {
-        return jsonResponse(npmSearchResult(['pkg-a']));
+        return jsonResponse(
+          npmSearchResult([{name: 'pkg-a', weekly: 500_000}])
+        );
       }
 
       return jsonResponse(tideliftResult([{name: 'pkg-a', lifted: false}]));
@@ -100,9 +115,19 @@ describe('estimate', () => {
       if (url.includes('registry.npmjs.org')) {
         npmCallCount++;
         if (npmCallCount === 1) {
-          return jsonResponse(npmSearchResult(['pkg-a', 'pkg-b'], 3));
+          return jsonResponse(
+            npmSearchResult(
+              [
+                {name: 'pkg-a', weekly: 500_000},
+                {name: 'pkg-b', weekly: 500_000}
+              ],
+              3
+            )
+          );
         }
-        return jsonResponse(npmSearchResult(['pkg-c'], 3));
+        return jsonResponse(
+          npmSearchResult([{name: 'pkg-c', weekly: 500_000}], 3)
+        );
       }
 
       return jsonResponse(
