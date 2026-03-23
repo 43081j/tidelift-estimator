@@ -64,7 +64,7 @@ describe('estimate', () => {
       username: 'testuser',
       packageCount: 3,
       liftedPackageCount: 2,
-      monthlyDollars: 75 // pkg-a: $50 (>=200k weekly), pkg-c: $25 (<200k weekly)
+      monthlyDollars: 100 // pkg-a: $50, pkg-c: $50
     });
   });
 

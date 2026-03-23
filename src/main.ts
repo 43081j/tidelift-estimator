@@ -26,9 +26,7 @@ interface TideliftEstimate {
 
 const npmSearchPageSize = 250;
 const tideliftBatchSize = 20;
-const downloadThreshold = 200_000;
-const dollarsAboveThreshold = 50;
-const dollarsBelowThreshold = 25;
+const dollarsPerLiftedPackage = 50;
 
 interface PackageInfo {
   name: string;
@@ -120,10 +118,7 @@ export async function estimate(username: string): Promise<Estimation> {
   let monthlyDollars = 0;
   for (const pkg of packages) {
     if (liftedNames.has(pkg.name)) {
-      monthlyDollars +=
-        pkg.weeklyDownloads < downloadThreshold
-          ? dollarsBelowThreshold
-          : dollarsAboveThreshold;
+      monthlyDollars += dollarsPerLiftedPackage;
     }
   }
 
