@@ -44,7 +44,7 @@ Tidelift Estimate for 43081j
 > As you can see in this example (of myself), the number is off in this case.
 > This is because I am not the primary maintainer/beneficiary of 4 of the
 > lifted packages I am a publisher of. I actually earn $50/month from one,
-> and a person I maintain a package with earns the other $200/month.
+> and a person I maintain a few packages with earns the other $200/month.
 
 ## License
 
