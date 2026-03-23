@@ -1,5 +1,5 @@
 {
-  "name": "@43081j/tidelift-estimator",
+  "name": "tidelift-estimator",
   "version": "0.1.0",
   "description": "Estimate the income of a given author.",
   "files": [
