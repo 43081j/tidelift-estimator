@@ -8,15 +8,14 @@ npm package maintainer.
 1. Fetches all packages for the given username from the npm registry
 2. Checks each package against the Tidelift API to see if it is "lifted"
    (i.e. subscribed to by Tidelift customers)
-3. Fetches last-month download counts from the npm downloads API
-4. Estimates monthly income per lifted package: **$50/month** for packages with
-   200k+ downloads, **$25/month** for those below, with the user as the primary
-   maintainer/beneficiary
+3. Estimates monthly income: **$50/month** per lifted package, with the user as
+   the primary maintainer/beneficiary
 
 > [!NOTE]
-> This is a rough estimate. The $25/$50 split at 200k downloads is our best
-> guess at how Tidelift tiers its payouts based on payouts we have
-> received. We could of course be wrong.
+> This is a rough estimate. Our own payouts, and payouts to other maintainers
+> we know show that all packages which have any kind of usage are earning
+> $50/month. Some outliers earn more or less, but the average is certainly
+> $50.
 
 ## Usage
 
