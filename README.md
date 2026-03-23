@@ -1,4 +1,4 @@
-# tidelift-estimator 💲
+# tidelift-estimator 🌊
 
 Estimates the potential [Tidelift](https://tidelift.com/) income for a given
 npm package maintainer.
