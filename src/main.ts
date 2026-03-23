@@ -11,6 +11,10 @@ interface NpmSearchResponse {
     package: {
       name: string;
     };
+    downloads: {
+      monthly: number;
+      weekly: number;
+    };
   }>;
 }
 
@@ -22,10 +26,17 @@ interface TideliftEstimate {
 
 const npmSearchPageSize = 250;
 const tideliftBatchSize = 20;
-const dollarsPerLiftedPackage = 50;
+const downloadThreshold = 200_000;
+const dollarsAboveThreshold = 50;
+const dollarsBelowThreshold = 25;
 
-async function fetchAllPackages(username: string): Promise<string[]> {
-  const packages: string[] = [];
+interface PackageInfo {
+  name: string;
+  weeklyDownloads: number;
+}
+
+async function fetchAllPackages(username: string): Promise<PackageInfo[]> {
+  const packages: PackageInfo[] = [];
   let from = 0;
 
   while (true) {
@@ -41,7 +52,10 @@ async function fetchAllPackages(username: string): Promise<string[]> {
     const data = (await response.json()) as NpmSearchResponse;
 
     for (const obj of data.objects) {
-      packages.push(obj.package.name);
+      packages.push({
+        name: obj.package.name,
+        weeklyDownloads: obj.downloads?.weekly ?? 0
+      });
     }
 
     if (packages.length >= data.total || data.objects.length === 0) {
@@ -62,9 +76,12 @@ function chunk<T>(array: T[], size: number): T[][] {
   return chunks;
 }
 
-async function fetchLiftedCount(packages: string[]): Promise<number> {
-  let liftedCount = 0;
-  const batches = chunk(packages, tideliftBatchSize);
+async function fetchLiftedPackages(
+  packages: PackageInfo[]
+): Promise<Set<string>> {
+  const lifted = new Set<string>();
+  const names = packages.map((p) => p.name);
+  const batches = chunk(names, tideliftBatchSize);
 
   for (const batch of batches) {
     const response = await fetch(
@@ -86,24 +103,34 @@ async function fetchLiftedCount(packages: string[]): Promise<number> {
 
     const estimates = (await response.json()) as TideliftEstimate[];
 
-    for (const estimate of estimates) {
-      if (estimate.lifted) {
-        liftedCount++;
+    for (const est of estimates) {
+      if (est.lifted) {
+        lifted.add(est.name);
       }
     }
   }
 
-  return liftedCount;
+  return lifted;
 }
 
 export async function estimate(username: string): Promise<Estimation> {
   const packages = await fetchAllPackages(username);
-  const liftedPackageCount = await fetchLiftedCount(packages);
+  const liftedNames = await fetchLiftedPackages(packages);
+
+  let monthlyDollars = 0;
+  for (const pkg of packages) {
+    if (liftedNames.has(pkg.name)) {
+      monthlyDollars +=
+        pkg.weeklyDownloads < downloadThreshold
+          ? dollarsBelowThreshold
+          : dollarsAboveThreshold;
+    }
+  }
 
   return {
     username,
-    monthlyDollars: liftedPackageCount * dollarsPerLiftedPackage,
+    monthlyDollars,
     packageCount: packages.length,
-    liftedPackageCount
+    liftedPackageCount: liftedNames.size
   };
 }
