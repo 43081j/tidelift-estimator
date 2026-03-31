@@ -4,26 +4,40 @@ import {parseArgs} from 'node:util';
 import {styleText} from 'node:util';
 import {estimate} from './main.js';
 
-const {positionals} = parseArgs({
-  allowPositionals: true
+const {positionals, values} = parseArgs({
+  allowPositionals: true,
+  options: {
+    package: {
+      type: 'boolean',
+      short: 'p'
+    }
+  }
 });
 
-const username = positionals[0];
+const name = positionals[0];
 
-if (!username) {
-  console.error(styleText('red', 'Error: Please provide a username.'));
-  console.error(`Usage: tidelift-estimator <username>`);
+if (!name) {
+  console.error(
+    styleText(
+      'red',
+      'Error: Please provide a username (or package name with --package).'
+    )
+  );
+  console.error(`Usage: tidelift-estimator [--package] <name>`);
   process.exit(1);
 }
 
-console.log(
-  styleText('dim', `Fetching packages for ${styleText('bold', username)}...`)
-);
+console.log(styleText('dim', `Looking up ${styleText('bold', name)}...`));
 
-const result = await estimate(username);
+const result = await estimate(name, {package: values.package ?? false});
+
+const label =
+  result.kind === 'package'
+    ? `Tidelift Estimate for package ${result.name}`
+    : `Tidelift Estimate for ${result.name}`;
 
 console.log();
-console.log(styleText('bold', `Tidelift Estimate for ${result.username}`));
+console.log(styleText('bold', label));
 console.log(styleText('dim', '─'.repeat(process.stdout.columns)));
 console.log(
   `  Packages:        ${styleText('cyan', String(result.packageCount))}`
