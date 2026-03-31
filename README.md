@@ -41,6 +41,15 @@ Tidelift Estimate for 43081j
   Monthly income:  $250
 ```
 
+To look up a specific package instead of a user, pass `--package` (or `-p`):
+
+```sh
+npx tidelift-estimator --package <package-name>
+```
+
+This will calculate the estimated income for the author of the package, based
+on the sum of all the deep dependencies that they also own.
+
 > [!NOTE]
 > As you can see in this example (of myself), the number is off in this case.
 > This is because I am not the primary maintainer/beneficiary of 4 of the

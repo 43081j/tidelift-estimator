@@ -61,7 +61,8 @@ describe('estimate', () => {
     const result = await estimate('testuser');
 
     expect(result).toEqual({
-      username: 'testuser',
+      kind: 'user',
+      name: 'testuser',
       packageCount: 3,
       liftedPackageCount: 2,
       monthlyDollars: 100 // pkg-a: $50, pkg-c: $50
@@ -84,7 +85,8 @@ describe('estimate', () => {
     const result = await estimate('testuser');
 
     expect(result).toEqual({
-      username: 'testuser',
+      kind: 'user',
+      name: 'testuser',
       packageCount: 1,
       liftedPackageCount: 0,
       monthlyDollars: 0
@@ -99,7 +101,8 @@ describe('estimate', () => {
     const result = await estimate('nobody');
 
     expect(result).toEqual({
-      username: 'nobody',
+      kind: 'user',
+      name: 'nobody',
       packageCount: 0,
       liftedPackageCount: 0,
       monthlyDollars: 0

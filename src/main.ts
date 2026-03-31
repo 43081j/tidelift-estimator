@@ -1,5 +1,6 @@
 export interface Estimation {
-  username: string;
+  kind: 'user' | 'package';
+  name: string;
   monthlyDollars: number;
   packageCount: number;
   liftedPackageCount: number;
@@ -10,10 +11,6 @@ interface NpmSearchResponse {
   objects: Array<{
     package: {
       name: string;
-    };
-    downloads: {
-      monthly: number;
-      weekly: number;
     };
   }>;
 }
@@ -28,13 +25,13 @@ const npmSearchPageSize = 250;
 const tideliftBatchSize = 20;
 const dollarsPerLiftedPackage = 50;
 
-interface PackageInfo {
-  name: string;
-  weeklyDownloads: number;
+interface NpmManifest {
+  maintainers?: Array<{name: string}>;
+  dependencies?: Record<string, string>;
 }
 
-async function fetchAllPackages(username: string): Promise<PackageInfo[]> {
-  const packages: PackageInfo[] = [];
+async function fetchAllPackages(username: string): Promise<string[]> {
+  const packages: string[] = [];
   let from = 0;
 
   while (true) {
@@ -50,10 +47,7 @@ async function fetchAllPackages(username: string): Promise<PackageInfo[]> {
     const data = (await response.json()) as NpmSearchResponse;
 
     for (const obj of data.objects) {
-      packages.push({
-        name: obj.package.name,
-        weeklyDownloads: obj.downloads?.weekly ?? 0
-      });
+      packages.push(obj.package.name);
     }
 
     if (packages.length >= data.total || data.objects.length === 0) {
@@ -74,11 +68,8 @@ function chunk<T>(array: T[], size: number): T[][] {
   return chunks;
 }
 
-async function fetchLiftedPackages(
-  packages: PackageInfo[]
-): Promise<Set<string>> {
+async function fetchLiftedPackages(names: string[]): Promise<Set<string>> {
   const lifted = new Set<string>();
-  const names = packages.map((p) => p.name);
   const batches = chunk(names, tideliftBatchSize);
 
   for (const batch of batches) {
@@ -111,21 +102,97 @@ async function fetchLiftedPackages(
   return lifted;
 }
 
-export async function estimate(username: string): Promise<Estimation> {
-  const packages = await fetchAllPackages(username);
-  const liftedNames = await fetchLiftedPackages(packages);
+async function fetchManifest(name: string): Promise<NpmManifest | null> {
+  const url = `https://registry.npmjs.org/${encodeURIComponent(name)}/latest`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    return null;
+  }
+  return (await response.json()) as NpmManifest;
+}
 
-  let monthlyDollars = 0;
-  for (const pkg of packages) {
-    if (liftedNames.has(pkg.name)) {
-      monthlyDollars += dollarsPerLiftedPackage;
+async function resolveAuthorDependencies(
+  name: string,
+  maintainerNames: Set<string>
+): Promise<string[]> {
+  const seen = new Set<string>();
+  const queue = [name];
+
+  while (queue.length > 0) {
+    const current = queue.pop();
+    if (!current || seen.has(current)) {
+      continue;
+    }
+
+    const manifest = await fetchManifest(current);
+    if (!manifest) {
+      continue;
+    }
+
+    const isSameAuthor =
+      current === name ||
+      (manifest.maintainers?.some((m) => maintainerNames.has(m.name)) ?? false);
+
+    if (!isSameAuthor) {
+      continue;
+    }
+
+    seen.add(current);
+
+    if (manifest.dependencies) {
+      for (const dep of Object.keys(manifest.dependencies)) {
+        if (!seen.has(dep)) {
+          queue.push(dep);
+        }
+      }
     }
   }
 
+  return [...seen];
+}
+
+async function estimatePackage(
+  name: string,
+  manifest: NpmManifest
+): Promise<Estimation> {
+  const maintainerNames = new Set(
+    manifest.maintainers?.map((m) => m.name) ?? []
+  );
+  const allDeps = await resolveAuthorDependencies(name, maintainerNames);
+  const liftedNames = await fetchLiftedPackages(allDeps);
+
   return {
-    username,
-    monthlyDollars,
+    kind: 'package',
+    name,
+    monthlyDollars: liftedNames.size * dollarsPerLiftedPackage,
+    packageCount: allDeps.length,
+    liftedPackageCount: liftedNames.size
+  };
+}
+
+async function estimateUser(username: string): Promise<Estimation> {
+  const packages = await fetchAllPackages(username);
+  const liftedNames = await fetchLiftedPackages(packages);
+
+  return {
+    kind: 'user',
+    name: username,
+    monthlyDollars: liftedNames.size * dollarsPerLiftedPackage,
     packageCount: packages.length,
     liftedPackageCount: liftedNames.size
   };
+}
+
+export async function estimate(
+  name: string,
+  options?: {package?: boolean}
+): Promise<Estimation> {
+  if (options?.package) {
+    const manifest = await fetchManifest(name);
+    if (!manifest) {
+      throw new Error(`Package not found: ${name}`);
+    }
+    return estimatePackage(name, manifest);
+  }
+  return estimateUser(name);
 }
